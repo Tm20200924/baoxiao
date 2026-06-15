@@ -151,42 +151,85 @@ def generate(data, out_dir):
     # --- АктОтчет ---
     wb = load_workbook(path_akt)
     ws = wb.active
+
+    # Count actual delegates with non-empty position+name
+    delegate_count = 0
+    for i in range(100):
+        pk = "dp" + str(i); nk = "dn" + str(i)
+        if pk in data and nk in data and data[pk].strip() and data[nk].strip():
+            delegate_count = i + 1
+    if delegate_count == 0:
+        delegate_count = 1
+
+    # Calculate row expansion: template has 23 slots (rows 28-73), need N*2 rows
+    TEMPLATE_SLOTS = 23
+    needed_rows = delegate_count * 2
+    extra = max(0, needed_rows - TEMPLATE_SLOTS * 2)
+    shift = extra
+
+    # Helper: shift row reference for rows >= 74
+    def R(r):
+        return r + shift if r >= 74 else r
+
+    # Insert blank rows after template delegation area
+    if extra > 0:
+        # Save and unmerge all ranges at row >= 74 (insert_rows breaks them)
+        saved_merges = []
+        for mc in list(ws.merged_cells.ranges):
+            if mc.min_row >= 74:
+                saved_merges.append(str(mc))
+                ws.unmerge_cells(str(mc))
+        # Insert rows
+        ws.insert_rows(74, extra)
+        # Re-merge at shifted positions
+        from openpyxl.utils import range_boundaries, get_column_letter as _gcl
+        for mc_str in saved_merges:
+            mn_col, mn_row, mx_col, mx_row = range_boundaries(mc_str)
+            nr = _gcl(int(mn_col)) + str(int(mn_row)+extra) + ":" + _gcl(int(mx_col)) + str(int(mx_row)+extra)
+            ws.merge_cells(nr)
+        # Create merged cells for new delegation rows
+        for r in range(74, 74 + extra):
+            ws.merge_cells("B" + str(r) + ":V" + str(r))
+            ws.merge_cells("Y" + str(r) + ":AG" + str(r))
+
+    # Fill fixed header cells (no shift)
     ws["D11"] = day_int; ws["G11"] = month_int; ws["I11"] = year_int // 100; ws["J11"] = year_int % 100
     ws["B18"] = company_full
     ws["M22"] = day_int; ws["P22"] = month_int; ws["R22"] = year_int // 100; ws["S22"] = year_int % 100
     ws["K23"] = venue; ws["K24"] = address
 
-    # Unmerge delegation area before writing
-    # Clear delegation area (preserve merged cell formatting)
-    for r in range(28, 74):
+    # Clear delegation area
+    for r in range(28, 28 + delegate_count * 2):
         ws["B" + str(r)] = None; ws["Y" + str(r)] = None
-    for i in range(50):
+
+    # Fill delegation
+    for i in range(delegate_count):
         pk = "dp" + str(i); nk = "dn" + str(i)
-        if pk in data and nk in data:
-            pos = data[pk].strip(); nam = data[nk].strip()
-            if pos and nam:
-                row = 28 + i * 2
-                if row + 1 <= 73:
-                    ws["B" + str(row)] = pos; ws["Y" + str(row)] = nam
-                    ws["B" + str(row+1)] = "(должность)"; ws["Y" + str(row+1)] = "(ФИО)"
+        pos = data.get(pk, "").strip(); nam = data.get(nk, "").strip()
+        if pos and nam:
+            row = 28 + i * 2
+            ws["B" + str(row)] = pos; ws["Y" + str(row)] = nam
+            ws["B" + str(row+1)] = "(должность)"; ws["Y" + str(row+1)] = "(ФИО)"
 
-    ws["B77"] = position; ws["Y77"] = participant
-    ws["B81"] = purpose; ws["B84"] = result
-    ws["N89"] = actual_amt; ws["S89"] = actual_words; ws["AE89"] = 0
-    ws["Q94"] = rec_date_clean
-    ws["U94"] = int(receipt_num) if str(receipt_num).isdigit() else receipt_num
-    ws["Y94"] = receipt_amt
+    # Fill participant area (shifted)
+    ws["B" + str(R(77))] = position; ws["Y" + str(R(77))] = participant
+    ws["B" + str(R(81))] = purpose; ws["B" + str(R(84))] = result
+    ws["N" + str(R(89))] = actual_amt; ws["S" + str(R(89))] = actual_words; ws["AE" + str(R(89))] = 0
+    ws["Q" + str(R(94))] = rec_date_clean
+    ws["U" + str(R(94))] = int(receipt_num) if str(receipt_num).isdigit() else receipt_num
+    ws["Y" + str(R(94))] = receipt_amt
 
-    for r in range(99, 107):
+    # Fill commission area (shifted)
+    for r in range(R(99), R(107)):
         ws["I" + str(r)] = None; ws["AC" + str(r)] = None
-    if data.get("c1p",""): ws["I99"] = data["c1p"]
-    if data.get("c1n",""): ws["AC99"] = data["c1n"]
-    if data.get("c2p",""): ws["I101"] = data["c2p"]
-    if data.get("c2n",""): ws["AC101"] = data["c2n"]
-    if data.get("c3p",""): ws["I103"] = data["c3p"]
-    if data.get("c3n",""): ws["AC103"] = data["c3n"]
-    if data.get("cmp_p",""): ws["I105"] = data["cmp_p"]
-    if data.get("cmp_n",""): ws["AC105"] = data["cmp_n"]
+    if data.get("c1p",""): ws["I" + str(R(99))] = data["c1p"]
+    if data.get("c1n",""): ws["AC" + str(R(99))] = data["c1n"]
+    if data.get("c2p",""): ws["I" + str(R(101))] = data["c2p"]
+    if data.get("c2n",""): ws["AC" + str(R(101))] = data["c2n"]
+    if data.get("c3p",""): ws["I" + str(R(103))] = data["c3p"]
+    if data.get("c3n",""): ws["AC" + str(R(103))] = data["c3n"]
+    if data.get("cmp_p",""): ws["I" + str(R(105))] = data["cmp_p"]
+    if data.get("cmp_n",""): ws["AC" + str(R(105))] = data["cmp_n"]
     wb.save(path_akt)
 
     return path_smeta, path_prikaz, path_akt
@@ -269,8 +312,8 @@ else:
         x1, x2 = st.columns([3, 3])
         with x1: dpos.append(st.text_input("职位"+str(i+1), key="mdp"+str(i)))
         with x2: dnam.append(st.text_input("姓名"+str(i+1), key="mdn"+str(i)))
-while len(dpos) < 50: dpos.append("")
-while len(dnam) < 50: dnam.append("")
+while len(dpos) < 100: dpos.append("")
+while len(dnam) < 100: dnam.append("")
 
 # === Submit ===
 if st.button("🚀 生成报销文件", type="primary", use_container_width=True):
