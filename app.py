@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import streamlit as st
 import os, io, zipfile, tempfile, re, datetime, shutil, random
 from pathlib import Path
@@ -290,7 +290,7 @@ with st.form("form"):
         company_type = st.selectbox("对方公司 *", ["russian", "chinese"],
                                      format_func=lambda x: "🇷🇺 俄罗斯公司" if x=="russian" else "🇨🇳 中国公司 (俄语转写)")
         st.subheader("公司与人员")
-        company_full = st.text_input("对方公司全名 *", "ЗК Урюм")
+        submitter = st.text_input("提交人 (您的名字)", "")
         responsible = st.text_input("负责人 *", "Иван Ли")
         position = st.text_input("参与人职位 *", "Менеджер По Продажам")
         participant = st.text_input("参与人姓名 *", "Иван Ли")
@@ -348,11 +348,13 @@ with st.form("form"):
     while len(dnam) < 18: dnam.append("")
 
     # Action buttons row
-    bcol1, bcol2, bcol3 = st.columns([1, 1, 3])
+    bcol1, bcol2, bcol3, bcol4 = st.columns([1, 1, 1, 2])
     with bcol1:
         gen_btn = st.form_submit_button("🎲 生成名单", type="secondary")
     with bcol2:
         clear_btn = st.form_submit_button("🗑️ 清空名单", type="secondary")
+    with bcol3:
+        recalc_btn = st.form_submit_button("🔄 重新计算", type="secondary")
 
     # --- Commission ---
     st.subheader("👤 Комиссия 成员")
@@ -375,7 +377,14 @@ with st.form("form"):
 
     go = st.form_submit_button("🚀 生成报销文件", type="primary", use_container_width=True)
 
+# --- Session state for usage log ---
+if "usage_log" not in st.session_state:
+    st.session_state.usage_log = []
+
 # --- Handle delegation buttons ---
+if "recalc_btn" in locals() and recalc_btn:
+    st.session_state.delegation = generate_delegation(company_type, delegate_count)
+    st.rerun()
 if "gen_btn" in locals() and gen_btn:
     st.session_state.delegation = generate_delegation(company_type, delegate_count)
     st.rerun()
@@ -383,6 +392,12 @@ if "gen_btn" in locals() and gen_btn:
 if "clear_btn" in locals() and clear_btn:
     st.session_state.delegation = []
     st.rerun()
+
+# --- Usage log display ---
+if st.session_state.usage_log:
+    with st.expander("📊 使用记录 (本次会话)", expanded=False):
+        for i, entry in enumerate(reversed(st.session_state.usage_log[-10:])):
+            st.caption(f"{entry['time']} | {entry['submitter']} | {entry['company']} | {entry['actual_amt']}₽ (预算{entry['budget_amt']}₽) | {entry['delegates']}人 | 负责人:{entry['responsible']}")
 
 if go:
     data = {
@@ -412,6 +427,17 @@ if go:
             td = tempfile.mkdtemp()
             try:
                 s,p,a = generate_files(data, td)
+                                # Log the submission
+                log_entry = {
+                    "time": str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")),
+                    "submitter": submitter if "submitter" in dir() else "",
+                    "company": company_full,
+                    "actual_amt": actual_amt,
+                    "budget_amt": budget_amt,
+                    "delegates": delegate_count,
+                    "responsible": responsible,
+                }
+                st.session_state.usage_log.append(log_entry)
                 st.success("生成完成! 预算:" + str(budget_amt) + " RUB | 实际:" + str(actual_amt) + " RUB")
                 with open(s,"rb") as f: sb = f.read()
                 with open(p,"rb") as f: pb = f.read()
