@@ -272,7 +272,7 @@ def generate_files(data, out_dir):
 # UI
 # ============================================================
 st.set_page_config(page_title="报销生成器", page_icon="📋", layout="wide")
-st.title("📋 柳工报销文档生成器")
+st.title("📋 效率报销-值得拥有")
 st.caption("填写表单 → 自动生成代表团 → 一键下载")
 
 if "delegation" not in st.session_state:
