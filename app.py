@@ -217,7 +217,7 @@ def generate(data, out_dir):
     ws["N" + str(R(89))] = actual_amt; ws["S" + str(R(89))] = actual_words; ws["AE" + str(R(89))] = 0
     ws["Q" + str(R(94))] = rec_date_clean
     ws["U" + str(R(94))] = int(receipt_num) if str(receipt_num).isdigit() else receipt_num
-    ws["Y" + str(R(94))] = receipt_amt
+    ws["Y" + str(R(94))] = receipt_amt; ws["AE" + str(R(94))] = delegate_count
 
     # Fill commission area (shifted)
     for r in range(R(99), R(107)):
