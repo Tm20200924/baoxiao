@@ -278,6 +278,38 @@ st.caption("填写表单 → 自动生成代表团 → 一键下载")
 if "delegation" not in st.session_state:
     st.session_state.delegation = []
 
+# Default values (safe for form-internal scope)
+date_str = "25.05.2026"
+actual_amt = 22370
+budget_amt = 30000
+amount_manual = ""
+company_type = "russian"
+company_full = ""
+submitter = ""
+responsible = ""
+position = ""
+participant = ""
+venue = ""
+address = ""
+purpose = ""
+result = ""
+receipt_date = ""
+receipt_num = ""
+receipt_amt = 0
+company_short = ""
+comm1_pos = "Генеральный директор"
+comm1_name = "Сяо Юаньсян"
+comm2_pos = ""
+comm2_name = ""
+comm3_pos = "Главный бухгалтер"
+comm3_name = ""
+compiler_pos_ui = "менеджер по продажам"
+compiler_name_ui = ""
+dpos = [""]*18
+dnam = [""]*18
+go = False
+delegate_count = 1
+
 with st.form("form"):
     c1, c2 = st.columns(2)
     with c1:
