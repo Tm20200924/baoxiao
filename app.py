@@ -151,6 +151,10 @@ def generate(data, out_dir):
     ws["M22"] = day_int; ws["P22"] = month_int; ws["S22"] = year_int
     ws["K23"] = venue; ws["K24"] = address
 
+    # Unmerge delegation area before writing
+    for merged_range in list(ws.merged_cells.ranges):
+        if 28 <= merged_range.min_row <= 73:
+            ws.unmerge_cells(str(merged_range))
     for r in range(28, 74):
         ws["B" + str(r)] = None; ws["Y" + str(r)] = None
     for i in range(50):
@@ -159,7 +163,7 @@ def generate(data, out_dir):
             pos = data[pk].strip(); nam = data[nk].strip()
             if pos and nam:
                 row = 28 + i * 2
-                if row + 1 <= ws.max_row:
+                if row + 1 <= 73:
                     ws["B" + str(row)] = pos; ws["Y" + str(row)] = nam
                     ws["B" + str(row+1)] = "(должность)"; ws["Y" + str(row+1)] = "(ФИО)"
 
