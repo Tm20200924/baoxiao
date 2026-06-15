@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import streamlit as st, os, io, zipfile, tempfile, re, datetime, shutil, random
 from pathlib import Path
 from docx import Document
@@ -153,7 +153,7 @@ def generate(data, out_dir):
 
     for r in range(28, 74):
         ws["B" + str(r)] = None; ws["Y" + str(r)] = None
-    for i in range(18):
+    for i in range(50):
         pk = "dp" + str(i); nk = "dn" + str(i)
         if pk in data and nk in data:
             pos = data[pk].strip(); nam = data[nk].strip()
@@ -261,7 +261,7 @@ else:
         x1, x2 = st.columns([3, 3])
         with x1: dpos.append(st.text_input("职位"+str(i+1), key="mdp"+str(i)))
         with x2: dnam.append(st.text_input("姓名"+str(i+1), key="mdn"+str(i)))
-while len(dpos) < MAX_DELEGATES_UI: dpos.append("")
+while len(dpos) < 50: dpos.append("")
 while len(dnam) < 50: dnam.append("")
 
 # === Submit ===
