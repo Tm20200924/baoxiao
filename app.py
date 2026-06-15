@@ -1,10 +1,13 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import streamlit as st
-import os, io, zipfile, tempfile, re, datetime, shutil
+import os, io, zipfile, tempfile, re, datetime, shutil, random
 from pathlib import Path
 from docx import Document
 from openpyxl import load_workbook
 
+# ============================================================
+# Russian number-to-words
+# ============================================================
 def rub_to_words(n):
     if n == 0: return "ноль"
     units = ["","один","два","три","четыре","пять","шесть","семь","восемь","девять",
@@ -48,6 +51,105 @@ def date_to_russian(s):
 
 TMPL_DIR = Path(__file__).parent / "templates"
 
+# ============================================================
+# Name Banks (3000+ combinations each)
+# ============================================================
+
+# Chinese surnames (60)
+CN_SURNAMES = [
+    "张","王","李","赵","刘","陈","杨","黄","周","吴",
+    "徐","孙","马","朱","胡","郭","何","高","林","罗",
+    "郑","梁","谢","宋","唐","许","韩","冯","邓","曹",
+    "彭","曾","萧","田","董","潘","袁","于","蒋","蔡",
+    "余","杜","叶","程","苏","魏","吕","丁","任","沈",
+    "姚","卢","姜","崔","钟","谭","陆","汪","范","石"
+]
+
+# Chinese given names (55) 
+CN_GIVEN = [
+    "伟","磊","洋","勇","军","杰","涛","明","超","强",
+    "鹏","建华","国栋","志强","建国","文博","浩然","子涵",
+    "宇轩","雨泽","志远","思远","博文","俊杰","睿","晨",
+    "阳","峰","宁","龙","飞","波","斌","刚","辉","林",
+    "敏","平","亮","鑫","毅","旭","豪","翔","哲","恒",
+    "悦","然","逸","翰","泽","瑞","安","康","健"
+]
+
+# Russian surnames (60)
+RU_SURNAMES = [
+    "Иванов","Петров","Сидоров","Смирнов","Кузнецов","Попов",
+    "Васильев","Михайлов","Новиков","Федоров","Морозов","Волков",
+    "Алексеев","Лебедев","Семенов","Егоров","Павлов","Козлов",
+    "Степанов","Николаев","Орлов","Андреев","Макаров","Никитин",
+    "Захаров","Зайцев","Соловьев","Борисов","Яковлев","Григорьев",
+    "Романов","Воробьев","Сергеев","Кузьмин","Фролов","Александров",
+    "Дмитриев","Королев","Гусев","Киселев","Ильин","Максимов",
+    "Поляков","Сорокин","Виноградов","Ковалев","Белов","Медведев",
+    "Антонов","Тарасов","Жуков","Баранов","Филиппов","Комаров",
+    "Давыдов","Беляев","Герасимов","Богданов","Осипов","Тимофеев"
+]
+
+# Russian given names (55)
+RU_GIVEN = [
+    "Александр","Дмитрий","Сергей","Андрей","Алексей","Михаил",
+    "Николай","Владимир","Иван","Павел","Роман","Виктор",
+    "Юрий","Денис","Евгений","Олег","Игорь","Анатолий",
+    "Вадим","Константин","Максим","Антон","Василий","Борис",
+    "Геннадий","Григорий","Даниил","Егор","Илья","Кирилл",
+    "Лев","Леонид","Матвей","Никита","Петр","Руслан",
+    "Святослав","Семен","Станислав","Степан","Тимур","Федор",
+    "Эдуард","Ярослав","Артем","Валерий","Владислав","Георгий",
+    "Арсений","Валентин","Вячеслав","Тимофей","Всеволод","Марк","Филипп"
+]
+
+# Russian business positions (25)
+RU_POSITIONS = [
+    "Генеральный директор","Исполнительный директор","Финансовый директор",
+    "Главный бухгалтер","Руководитель отдела продаж","Руководитель транспортного отдела",
+    "Специалист по таможенному оформлению","Менеджер по маркетингу","Менеджер по закупкам",
+    "Главный инженер","Инженер-проектировщик","Специалист по логистике",
+    "Юрисконсульт","Экономист","Специалист по ВЭД","IT-специалист",
+    "Начальник склада","Водитель-экспедитор","Переводчик (китайский язык)",
+    "Офис-менеджер","Ассистент проекта","Аналитик","Технический директор",
+    "Менеджер по продукту","Специалист по безопасности"
+]
+
+# Chinese business positions (25)
+CN_POSITIONS = [
+    "总经理","执行董事","财务总监","总会计师","销售部经理",
+    "运输部经理","报关专员","市场营销经理","采购经理","总工程师",
+    "设计工程师","物流专员","法务顾问","经济师","外贸专员",
+    "IT工程师","仓库主管","调度员","翻译(俄语)","行政经理",
+    "项目助理","数据分析师","技术总监","产品经理","安全主管"
+]
+
+def generate_random_name(company_type):
+    """Generate a random full name based on company type."""
+    if company_type == "chinese":
+        s = random.choice(CN_SURNAMES)
+        g = random.choice(CN_GIVEN)
+        return s + g
+    else:
+        s = random.choice(RU_SURNAMES)
+        g = random.choice(RU_GIVEN)
+        return s + " " + g
+
+def generate_delegation(company_type, count):
+    """Generate a delegation list with random names and positions."""
+    positions = CN_POSITIONS if company_type == "chinese" else RU_POSITIONS
+    # Shuffle positions and cycle through them
+    shuffled = list(positions)
+    random.shuffle(shuffled)
+    delegation = []
+    for i in range(count):
+        pos = shuffled[i % len(shuffled)]
+        name = generate_random_name(company_type)
+        delegation.append((pos, name))
+    return delegation
+
+# ============================================================
+# Docx helpers
+# ============================================================
 def get_para_full(para):
     return "".join(r.text for r in para.runs)
 def replace_para_text(para, txt):
@@ -61,6 +163,9 @@ def set_cell_text(cell, txt):
             for r in rs[1:]: r.text=""
         else: ps[0].text=str(txt)
 
+# ============================================================
+# File generation
+# ============================================================
 def generate_files(data, out_dir):
     date_str = data["date"]
     actual_amt = data["actual_amt"]
@@ -194,23 +299,37 @@ def generate_files(data, out_dir):
     wb.save(out_a)
     return out_s, out_p, out_a
 
+# ============================================================
+# Streamlit UI
+# ============================================================
 st.set_page_config(page_title="报销生成器", page_icon="📋", layout="wide")
 st.title("📋 柳工报销文档生成器")
-st.caption("填写表单 → 一键下载三份文件")
+st.caption("填写表单 → 自动生成代表团 → 一键下载三份文件")
+
+if "delegation" not in st.session_state:
+    st.session_state.delegation = []
+if "regenerate" not in st.session_state:
+    st.session_state.regenerate = False
 
 with st.form("form"):
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("基本信息")
         date_str = st.text_input("活动日期 *", "25.05.2026")
-        actual_amt = st.number_input("实际报销金额 *", 0, value=22370)
+        actual_amt = st.number_input("实际报销金额 *", 0, value=22370, help="输入后自动计算代表团人数")
         budget_amt = st.number_input("Смета预算金额 *", 0, value=30000, help="比实际大且取整")
         amount_manual = st.text_input("金额大写(不填=自动)", "")
+
+        st.subheader("公司类型")
+        company_type = st.selectbox("对方公司类型 *", ["russian", "chinese"],
+                                     format_func=lambda x: "🇷🇺 俄罗斯公司" if x=="russian" else "🇨🇳 中国公司")
+
         st.subheader("公司与人员")
         company_full = st.text_input("对方公司全名 *", "ЗК Урюм")
         responsible = st.text_input("负责人 *", "Иван Ли")
         position = st.text_input("参与人职位 *", "Менеджер По Продажам")
         participant = st.text_input("参与人姓名 *", "Иван Ли")
+
     with c2:
         st.subheader("会议地点")
         venue = st.text_input("地点名称 *", "чуаньюй")
@@ -223,33 +342,75 @@ with st.form("form"):
         receipt_num = st.text_input("小票编号", "")
         receipt_amt = st.number_input("小票金额(不填=实际)", 0, value=0)
 
-    st.subheader("对方代表团 (每人2300 RUB)")
-    nd = st.number_input("人数", 1, 18, 5)
-    dc1, dc2 = st.columns(2)
-    dpos, dnam = [], []
-    for i in range(nd):
-        with dc1: dpos.append(st.text_input("职位" + str(i+1), key="dp"+str(i)))
-        with dc2: dnam.append(st.text_input("姓名" + str(i+1), key="dn"+str(i)))
+    # --- Auto delegation ---
+    st.subheader("👥 对方代表团 (每人2300 RUB)")
+    
+    # Auto-calculate count
+    delegate_count = max(1, (actual_amt + 2299) // 2300)
+    st.info(f"💰 实际金额 {actual_amt} ₽ ÷ 2300 ₽/人 = **{delegate_count} 人** (预算 {delegate_count * 2300} ₽)")
 
-    st.subheader("Комиссия 成员")
+    # Generate button inside form
+    gen_deleg = st.form_submit_button("🎲 自动生成代表团名单", type="secondary")
+    if gen_deleg:
+        st.session_state.delegation = generate_delegation(company_type, delegate_count)
+        st.rerun()
+
+    # Show delegation table
+    if st.session_state.delegation:
+        st.caption(f"已生成 {len(st.session_state.delegation)} 人 (🇨🇳中文名" if company_type=="chinese" else f"已生成 {len(st.session_state.delegation)} 人 (🇷🇺俄文名")
+        dcols = st.columns([3, 3, 1])
+        with dcols[0]: st.markdown("**职位**")
+        with dcols[1]: st.markdown("**姓名**")
+        with dcols[2]: st.markdown("**预算**")
+        
+        dpos, dnam = [], []
+        for i, (pos, name) in enumerate(st.session_state.delegation):
+            dc1, dc2, dc3 = st.columns([3, 3, 1])
+            with dc1:
+                dpos.append(st.text_input("", pos, key="gdp"+str(i), label_visibility="collapsed"))
+            with dc2:
+                dnam.append(st.text_input("", name, key="gdn"+str(i), label_visibility="collapsed"))
+            with dc3:
+                st.markdown("2300 ₽")
+    else:
+        st.caption("点击「自动生成代表团名单」按钮，或手动填写")
+        dpos, dnam = [], []
+        for i in range(delegate_count):
+            dc1, dc2 = st.columns(2)
+            with dc1: dpos.append(st.text_input("职位"+str(i+1), key="mdp"+str(i)))
+            with dc2: dnam.append(st.text_input("姓名"+str(i+1), key="mdn"+str(i)))
+        # Fill remaining
+        for i in range(delegate_count, 18):
+            dpos.append(""); dnam.append("")
+
+    if not st.session_state.delegation:
+        # Pad dpos/dnam if short
+        while len(dpos) < 18: dpos.append("")
+        while len(dnam) < 18: dnam.append("")
+    else:
+        while len(dpos) < 18: dpos.append("")
+        while len(dnam) < 18: dnam.append("")
+
+    # --- Commission ---
+    st.subheader("👤 Комиссия 成员")
     cm1, cm2 = st.columns(2)
     with cm1:
-        comm1_pos = st.text_input("成员1 职位(I99)", "Генеральный директор", key="c1p")
-        comm1_name = st.text_input("成员1 姓名(AC99)", "Сяо Юаньсян", key="c1n")
+        comm1_pos = st.text_input("Ген. директор 职位", "Генеральный директор", key="c1p", disabled=True)
+        comm1_name = st.text_input("Ген. директор 姓名", "Сяо Юаньсян", key="c1n", disabled=True)
     with cm2:
-        comm2_pos = st.text_input("成员2 职位(I101)", "", key="c2p")
-        comm2_name = st.text_input("成员2 姓名(AC101)", "", key="c2n")
+        comm2_pos = st.text_input("上级领导 职位(I101)", "", key="c2p")
+        comm2_name = st.text_input("上级领导 姓名(AC101)", "", key="c2n")
     cm3, cm4 = st.columns(2)
     with cm3:
-        comm3_pos = st.text_input("成员3 职位(I103)", "", key="c3p")
-        comm3_name = st.text_input("成员3 姓名(AC103)", "", key="c3n")
+        comm3_pos = st.text_input("主会计 职位(I103)", "Главный бухгалтер", key="c3p")
+        comm3_name = st.text_input("主会计 姓名(AC103)", "", key="c3n")
     with cm4:
-        compiler_pos = st.text_input("编制人 职位(I105)", "менеджер по продажам", key="cmp_p")
-        compiler_name = st.text_input("编制人 姓名(AC105)", "Иван Ли", key="cmp_n")
+        compiler_pos_ui = st.text_input("编制人 职位(I105)", "менеджер по продажам", key="cmp_p")
+        compiler_name_ui = st.text_input("编制人 姓名(AC105)", participant, key="cmp_n")
 
     company_short = st.text_input("对方公司简称(不填=全名)", "")
 
-    go = st.form_submit_button("生成报销文件", type="primary", use_container_width=True)
+    go = st.form_submit_button("🚀 生成报销文件", type="primary", use_container_width=True)
 
 if go:
     data = {
@@ -263,7 +424,7 @@ if go:
         "comm1_pos": comm1_pos, "comm1_name": comm1_name,
         "comm2_pos": comm2_pos, "comm2_name": comm2_name,
         "comm3_pos": comm3_pos, "comm3_name": comm3_name,
-        "compiler_pos": compiler_pos, "compiler_name": compiler_name,
+        "compiler_pos": compiler_pos_ui, "compiler_name": compiler_name_ui,
     }
     for i,(p,n) in enumerate(zip(dpos,dnam)):
         data["deleg_pos_"+str(i)] = p
@@ -289,10 +450,10 @@ if go:
                     zf.writestr("报销_приказ.docx", pb)
                     zf.writestr("АктОтчет.xlsx", ab)
                 zb.seek(0)
-                st.download_button("下载全部 (ZIP)", zb, "报销文件.zip", "application/zip", use_container_width=True)
+                st.download_button("📥 下载全部 (ZIP)", zb, "报销文件.zip", "application/zip", use_container_width=True)
                 cld, crd = st.columns(2)
-                with cld: st.download_button("Смета.docx", sb, "Смета.docx")
-                with crd: st.download_button("报销_приказ.docx", pb, "报销_приказ.docx")
-                st.download_button("АктОтчет.xlsx", ab, "АктОтчет.xlsx")
+                with cld: st.download_button("📄 Смета.docx", sb, "Смета.docx")
+                with crd: st.download_button("📄 报销_приказ.docx", pb, "报销_приказ.docx")
+                st.download_button("📊 АктОтчет.xlsx", ab, "АктОтчет.xlsx")
             finally:
                 shutil.rmtree(td, ignore_errors=True)
