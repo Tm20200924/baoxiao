@@ -261,8 +261,8 @@ else:
         x1, x2 = st.columns([3, 3])
         with x1: dpos.append(st.text_input("职位"+str(i+1), key="mdp"+str(i)))
         with x2: dnam.append(st.text_input("姓名"+str(i+1), key="mdn"+str(i)))
-while len(dpos) < 18: dpos.append("")
-while len(dnam) < 18: dnam.append("")
+while len(dpos) < MAX_DELEGATES_UI: dpos.append("")
+while len(dnam) < 50: dnam.append("")
 
 # === Submit ===
 if st.button("🚀 生成报销文件", type="primary", use_container_width=True):
