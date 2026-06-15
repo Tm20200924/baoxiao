@@ -157,9 +157,7 @@ def generate(data, out_dir):
     ws["K23"] = venue; ws["K24"] = address
 
     # Unmerge delegation area before writing
-    for merged_range in list(ws.merged_cells.ranges):
-        if 28 <= merged_range.min_row <= 73:
-            ws.unmerge_cells(str(merged_range))
+    # Clear delegation area (preserve merged cell formatting)
     for r in range(28, 74):
         ws["B" + str(r)] = None; ws["Y" + str(r)] = None
     for i in range(50):
