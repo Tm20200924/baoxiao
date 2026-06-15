@@ -159,8 +159,9 @@ def generate(data, out_dir):
             pos = data[pk].strip(); nam = data[nk].strip()
             if pos and nam:
                 row = 28 + i * 2
-                ws["B" + str(row)] = pos; ws["Y" + str(row)] = nam
-                ws["B" + str(row+1)] = "(должность)"; ws["Y" + str(row+1)] = "(ФИО)"
+                if row + 1 <= ws.max_row:
+                    ws["B" + str(row)] = pos; ws["Y" + str(row)] = nam
+                    ws["B" + str(row+1)] = "(должность)"; ws["Y" + str(row+1)] = "(ФИО)"
 
     ws["B77"] = position; ws["Y77"] = participant
     ws["B81"] = purpose; ws["B84"] = result
