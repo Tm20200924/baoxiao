@@ -91,6 +91,7 @@ def generate(data, out_dir):
     date_russian = date_to_russian(date_str)
     day_str, month_str, year_str = date_str.split(".")
     day_int, month_int, year_int = int(day_str), month_str, int(year_str)
+    # Use receipt date for event date in prikaz
 
     # Parse receipt date to dd.mm.yyyy
     rec_date_clean = receipt_date
@@ -100,6 +101,7 @@ def generate(data, out_dir):
             rec_date_clean = dt.strftime("%d.%m.%Y")
             break
         except: pass
+    receipt_date_russian = date_to_russian(rec_date_clean) if rec_date_clean else date_russian
 
     os.makedirs(out_dir, exist_ok=True)
     path_smeta = os.path.join(out_dir, "Смета.docx")
@@ -116,6 +118,9 @@ def generate(data, out_dir):
     _sct(doc.tables[0].rows[0].cells[1], date_str)
     _sct(doc.tables[1].rows[1].cells[1], str(budget_amt))
     _sct(doc.tables[1].rows[2].cells[1], str(budget_amt))
+    # Remove second page (blank section)
+    if len(doc.sections) > 1:
+            doc.element.body.remove(doc.sections[1]._sectPr)
     doc.save(path_smeta)
 
     # --- приказ ---
@@ -131,7 +136,7 @@ def generate(data, out_dir):
             ix = full.find("делегация")
             _rpt(para, full[:ix] + "делегация  " + company_full); continue
         if "Провести" in full and "провести официальный прием" in full:
-            _rpt(para, re.sub(r"Провести\s+\d{1,2}\s+\w+\s+\d{4}\s+г\.","Провести " + date_russian, full)); continue
+            _rpt(para, re.sub(r"Провести\s+\d{1,2}\s+\w+\s+\d{4}\s+г\.","Провести " + receipt_date_russian, full)); continue
         if "смету представительских расходов" in full and "размере" in full:
             _rpt(para, re.sub(r"размере\s+.+?\s+рублей\s+\d{2}\s+копеек","размере " + actual_words + " рублей 00 копеек", full)); continue
         if "Ответственному за представительское мероприятие работнику" in full:
@@ -146,9 +151,9 @@ def generate(data, out_dir):
     # --- АктОтчет ---
     wb = load_workbook(path_akt)
     ws = wb.active
-    ws["D11"] = day_int; ws["G11"] = month_int; ws["J11"] = year_int
+    ws["D11"] = day_int; ws["G11"] = month_int; ws["I11"] = year_int // 100; ws["J11"] = year_int % 100
     ws["B18"] = company_full
-    ws["M22"] = day_int; ws["P22"] = month_int; ws["S22"] = year_int
+    ws["M22"] = day_int; ws["P22"] = month_int; ws["R22"] = year_int // 100; ws["S22"] = year_int % 100
     ws["K23"] = venue; ws["K24"] = address
 
     # Unmerge delegation area before writing
