@@ -71,7 +71,7 @@ def generate(data, out_dir):
     ds=data["date"]; aa=data["actual_amt"]; ba=data.get("budget_amt") or aa
     aw=data.get("amount_manual","").strip()
     cf=data["company_full"]; rp=data["responsible"]; po=data["position"]; pa=data["participant"]
-    ve=data.get("venue",""); ad=data.get("address",""); pu=data.get("purpose",""); re=data.get("result","")
+    ve=data.get("venue",""); ad=data.get("address",""); pu=data.get("purpose",""); res=data.get("result","")
     rd=data.get("receipt_date",""); rn=data.get("receipt_num",""); ra=data.get("receipt_amt") or aa
     cs=data.get("company_short") or cf
     bw=aw if aw else rub_to_words(ba); acw=rub_to_words(aa)
@@ -124,7 +124,7 @@ def generate(data, out_dir):
                 row=28+i*2
                 ws["B"+str(row)]=pos; ws["Y"+str(row)]=nam
                 ws["B"+str(row+1)]="(должность)"; ws["Y"+str(row+1)]="(ФИО)"
-    ws["B77"]=po; ws["Y77"]=pa; ws["B81"]=pu; ws["B84"]=re
+    ws["B77"]=po; ws["Y77"]=pa; ws["B81"]=pu; ws["B84"]=res
     ws["N89"]=aa; ws["S89"]=acw; ws["AE89"]=0
     ws["Q94"]=rdc; ws["U94"]=int(rn) if str(rn).isdigit() else rn; ws["Y94"]=ra
     for r in range(99,107): ws["I"+str(r)]=None; ws["AC"+str(r)]=None
