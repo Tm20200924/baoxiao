@@ -152,13 +152,9 @@ def generate(data, out_dir):
     wb = load_workbook(path_akt)
     ws = wb.active
 
-    # Count actual delegates with non-empty position+name
-    delegate_count = 0
-    for i in range(100):
-        pk = "dp" + str(i); nk = "dn" + str(i)
-        if pk in data and nk in data and data[pk].strip() and data[nk].strip():
-            delegate_count = i + 1
-    if delegate_count == 0:
+    # Use delegate count passed from UI (counts actual filled entries)
+    delegate_count = data.get("delegate_count", 1)
+    if delegate_count < 1:
         delegate_count = 1
 
     # Calculate row expansion: template has 23 slots (rows 28-73), need N*2 rows
@@ -335,6 +331,8 @@ if st.button("🚀 生成报销文件", type="primary", use_container_width=True
                 "c2p": c2p, "c2n": c2n, "c3p": c3p, "c3n": c3n,
                 "cmp_p": cmp_p, "cmp_n": cmp_n,
             }
+            actual_del_count = sum(1 for p, n in zip(dpos, dnam) if p.strip() and n.strip())
+            data["delegate_count"] = actual_del_count if actual_del_count > 0 else 1
             for i, (p, n) in enumerate(zip(dpos, dnam)):
                 data["dp"+str(i)] = p; data["dn"+str(i)] = n
 
