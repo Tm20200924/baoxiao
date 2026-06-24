@@ -118,6 +118,10 @@ def generate(data, out_dir):
     _sct(doc.tables[0].rows[0].cells[1], date_str)
     _sct(doc.tables[1].rows[1].cells[1], str(budget_amt))
     _sct(doc.tables[1].rows[2].cells[1], str(budget_amt))
+    # Replace "Генеральный директор" in smeta
+    for para in doc.paragraphs:
+        if "Генеральный директор" in para.text:
+            _rpt(para, para.text.replace("Генеральный директор", "Зам.генерального директора"))
     # Remove second page (blank section)
     if len(doc.sections) > 1:
             doc.element.body.remove(doc.sections[1]._sectPr)
@@ -215,7 +219,7 @@ def generate(data, out_dir):
     ws["N" + str(R(89))] = actual_amt; ws["S" + str(R(89))] = actual_words; ws["AE" + str(R(89))] = 0
     ws["Q" + str(R(94))] = rec_date_clean
     ws["U" + str(R(94))] = int(receipt_num) if str(receipt_num).isdigit() else receipt_num
-    ws["Y" + str(R(94))] = receipt_amt; ws["AE" + str(R(94))] = max(1, (actual_amt + 2299) // 2300)
+    ws["Y" + str(R(94))] = receipt_amt; ws["AE" + str(R(94))] = delegate_count
 
     # Fill commission area (shifted)
     for r in range(R(99), R(107)):
