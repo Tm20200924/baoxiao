@@ -198,7 +198,7 @@ def generate(data, out_dir):
     ws["D11"] = day_int; ws["G11"] = month_int; ws["I11"] = year_int // 100; ws["J11"] = year_int % 100
     ws["B18"] = company_full
     ws["M22"] = day_int; ws["P22"] = month_int; ws["R22"] = year_int // 100; ws["S22"] = year_int % 100
-    ws["K23"] = venue; ws["K24"] = address
+    ws["K23"] = venue; ws["K24"] = address; ws["I13"] = "Зам.генерального директора"
 
     # Clear delegation area
     for r in range(28, 28 + delegate_count * 2):
