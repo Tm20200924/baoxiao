@@ -138,8 +138,10 @@ def generate(data, out_dir):
         if "Провести" in full and "провести официальный прием" in full:
             _rpt(para, re.sub(r"Провести\s+\d{1,2}\s+\w+\s+\d{4}\s+г\.","Провести " + receipt_date_russian, full)); continue
         if "смету представительских расходов" in full and "размере" in full:
-            _rpt(para, re.sub(r"размере\s+.+?\s+рублей\s+\d{2}\s+копеек","размере " + actual_words + " рублей 00 копеек", full)); continue
-        if "Ответственному за представительское мероприятие работнику" in full:
+            _rpt(para, re.sub(r"размере\s+.+?\s+рублей\s+\d{2}\s+копеек","размере " + budget_words + " рублей 00 копеек", full)); continue
+        if "генерального директора" in full and "Сяо" in full:
+            _rpt(para, full.replace("генерального директора", "Зам.генерального директора"))
+        elif "Ответственному за представительское мероприятие работнику" in full:
             ix = full.find("работнику")
             _rpt(para, full[:ix] + "работнику " + responsible); continue
         if full.strip().startswith("-") and ("менеджер" in full.lower() or "Региональный" in full):
@@ -213,7 +215,7 @@ def generate(data, out_dir):
     ws["N" + str(R(89))] = actual_amt; ws["S" + str(R(89))] = actual_words; ws["AE" + str(R(89))] = 0
     ws["Q" + str(R(94))] = rec_date_clean
     ws["U" + str(R(94))] = int(receipt_num) if str(receipt_num).isdigit() else receipt_num
-    ws["Y" + str(R(94))] = receipt_amt; ws["AE" + str(R(94))] = delegate_count
+    ws["Y" + str(R(94))] = receipt_amt; ws["AE" + str(R(94))] = max(1, (actual_amt + 2299) // 2300)
 
     # Fill commission area (shifted)
     for r in range(R(99), R(107)):
@@ -260,7 +262,7 @@ with c2:
     receipt_num = st.text_input("编号", "")
     receipt_amt = st.number_input("金额(不填=实际)", 0, value=0)
     st.subheader("👤 Комиссия")
-    c1p = st.text_input("Ген.директор", "Генеральный директор", disabled=True, key="c1p")
+    c1p = st.text_input("Ген.директор", "Зам.генеральный директор", disabled=True, key="c1p")
     c1n = st.text_input("姓名", "Сяо Юаньсян", disabled=True, key="c1n")
     c2p = st.text_input("上级领导 职位", "", key="c2p")
     c2n = st.text_input("上级领导 姓名", "", key="c2n")
@@ -327,7 +329,7 @@ if st.button("🚀 生成报销文件", type="primary", use_container_width=True
                 "receipt_date": receipt_date, "receipt_num": receipt_num,
                 "receipt_amt": receipt_amt if receipt_amt else actual_amt,
                 "company_short": company_short,
-                "c1p": "Генеральный директор", "c1n": "Сяо Юаньсян",
+                "c1p": "Зам.генеральный директор", "c1n": "Сяо Юаньсян",
                 "c2p": c2p, "c2n": c2n, "c3p": c3p, "c3n": c3n,
                 "cmp_p": cmp_p, "cmp_n": cmp_n,
             }
